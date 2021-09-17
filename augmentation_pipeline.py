@@ -14,7 +14,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--input_dir', default='data/')
 args = parser.parse_args()
 
-main_folder = args.input_dir
+main_folder = os.path.join(str(os.getcwd()), args.input_dir)
 
 # user needs to input these
 # Label ids of the dataset
@@ -34,34 +34,34 @@ multipolygon_ids = []
 
 
 # run the function to rename all files to make them unique
-logging.info(f'---Start renaming all files---/n')
+logging.info('---Start renaming all files---\n')
 unique_files(main_folder)
-logging.info(f'---Finished renaming all files---/n/n')
+logging.info('---Finished renaming all files---\n\n')
 
 # run the function to copy all files to a single directory
-logging.info(f'---Start copying all files---/n')
+logging.info('---Start copying all files---\n')
 group_data(main_folder)
-logging.info(f'---Finished copying all files---/n/n')
+logging.info('---Finished copying all files---\n\n')
 
 # do train and validation split on all images
-logging.info(f'---Start creating training and validation folders---/n')
+logging.info('---Start creating training and validation folders---\n')
 train_val_split(main_folder)
-logging.info(f'---Finished train-val split---/n/n')
+logging.info('---Finished train-val split---\n\n')
 
 
 # perform extra image augmentations with albumentation library
-logging.info(f'---Start generating image augmentations---/n')
+logging.info('---Start generating image augmentations---\n')
 img_augmentation(main_folder)
-logging.info(f'---Finished generating image augmentations---/n/n')
+logging.info('---Finished generating image augmentations---\n\n')
 
 
 # create COCO JSON files for each train and val set
 train_dir = os.path.join(main_folder, 'final/train')
 val_dir = os.path.join(main_folder, 'final/val')
 
-logging.info(f'---Start creating COCO JSON annotations---/n')
+logging.info('---Start creating COCO JSON annotations---\n')
 coco_pipeline(train_dir, category_ids, category_colors, multipolygon_ids)
-logging.info(f'Completed for training set!')
+logging.info('Completed for training set!')
 coco_pipeline(val_dir, category_ids, category_colors, multipolygon_ids)
-logging.info(f'Completed for validation set!/n/n')
+logging.info('Completed for validation set!\n\n')
 
