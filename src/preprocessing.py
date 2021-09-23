@@ -205,7 +205,7 @@ def images_annotations_info(main_directory, category_ids, category_colors, multi
                             annotations.append(annotation)
                             annotation_id += 1
                 image_id += 1
-        return images, annotations, annotation_id
+    return images, annotations, annotation_id
 
 
 

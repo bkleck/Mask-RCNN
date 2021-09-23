@@ -24,7 +24,7 @@ from detectron2.utils.visualizer import ColorMode
 from detectron2.evaluation import COCOEvaluator, inference_on_dataset
 from detectron2.data import build_detection_test_loader
 
-
+print(torch.cuda.is_available())
 # create logging configs
 logging.basicConfig(
     level=logging.INFO,
@@ -80,12 +80,14 @@ configs = {'num_workers': 2,
             
 logging.info('These are the model configurations:')
 for k,v in configs.items():
-    print(f'')
+    print(f'{k}: {v}')
+print('')
 
 cfg = get_cfg()
 cfg.merge_from_file(model_zoo.get_config_file("COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_1x.yaml"))
 cfg.DATASETS.TRAIN = ("train",)
 cfg.DATASETS.TEST = ()
+cfg.TEST.EVAL_PERIOD = 100
 cfg.DATALOADER.NUM_WORKERS = configs['num_workers']
 cfg.MODEL.WEIGHTS = model_zoo.get_checkpoint_url("COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_1x.yaml")  # Let training initialize from model zoo
 cfg.SOLVER.IMS_PER_BATCH = configs['image_per_batch']
@@ -95,6 +97,29 @@ cfg.SOLVER.STEPS = []        # do not decay learning rate
 cfg.MODEL.ROI_HEADS.BATCH_SIZE_PER_IMAGE = configs['batch_size_per_img']   # faster, and good enough for this dataset (default: 512)
 cfg.MODEL.ROI_HEADS.NUM_CLASSES = configs['classes']  # only has one class (labo)
 
-output_dir = os.path.join(main_folder, 'final')
+output_dir = os.path.join(main_folder, 'output')
 cfg.OUTPUT_DIR = output_dir
 os.makedirs(cfg.OUTPUT_DIR, exist_ok=True)
+
+
+# start trainer
+trainer = DefaultTrainer(cfg) 
+trainer.resume_or_load(resume=False)
+trainer.train()
+
+
+logging.info('\nTraining is completed.\n')
+
+
+# Inference should use the config with parameters that are used in training
+# cfg now already contains everything we've set previously. We changed it a little bit for inference:
+cfg.MODEL.WEIGHTS = os.path.join(cfg.OUTPUT_DIR, "model_final.pth")  # path to the model we just trained
+cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = 0.8   # set a custom testing threshold
+predictor = DefaultPredictor(cfg)
+
+
+# perform validation on val dataset
+evaluator = COCOEvaluator("val", output_dir="./output")
+val_loader = build_detection_test_loader(cfg, "val")
+print(inference_on_dataset(predictor.model, val_loader, evaluator))
+logging.info('\nValidation is completed.\n')
