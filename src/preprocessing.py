@@ -11,6 +11,49 @@ import cv2
 
 from src.create_annotations import *
 
+
+# function to extract label information from Unity JSON file
+def extract_json(main_folder):
+    # we can take any JSON file, so we take the first one
+    folder = os.listdir(main_folder)[0]
+    folder = os.path.join(main_folder, folder)
+
+    # get the name of the Dataset folder
+    dataset_folder = str([i for i in os.listdir(folder) if i.startswith('Dataset')][0])
+    dataset_path = os.path.join(folder, dataset_folder)
+
+    # read data from the json file
+    with open(f'{dataset_path}/annotation_definitions.json') as f:
+        d = json.load(f)
+
+    # add the details into these dictionaries
+    category_ids = {}
+    category_colors = {}
+    count = 0
+
+    # read the Unity JSON and save to the above dictionaries
+    for object in d['annotation_definitions'][0]['spec']:
+
+        # add name of object as key, and id number as value
+        category_ids[object['label_name']] = count
+
+        # get pixel values and multiply them by 255
+        red = int(object['pixel_value']['r'] * 255)
+        green = int(object['pixel_value']['g'] * 255)
+        blue = int(object['pixel_value']['b'] * 255)
+        tup = str((red, green, blue))
+
+        # add tuple of pixel values as key, and id number as value
+        category_colors[tup] = count
+
+        # increase the id value after each object
+        count += 1
+        
+    return category_ids, category_colors
+
+
+
+
 # function to rename files to make every file unique
 # output image files from Unity are not unique
 # rename every file with their folder prefix

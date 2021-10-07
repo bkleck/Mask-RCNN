@@ -16,17 +16,8 @@ args = parser.parse_args()
 
 main_folder = os.path.join(str(os.getcwd()), args.input_dir)
 
-# user needs to input these
-# Label ids of the dataset
-category_ids = {
-    "labo": 0
-}
-
-# Define which colors match which categories in the images
-# multiply value in json by 255
-category_colors = {
-    "(0, 0, 255)": 0, # labo
-}
+# fill up the dictionaries with the JSON file generated from Unity
+category_ids, category_colors = extract_json(main_folder)
 
 # Define the ids that are a multiplolygon. e.g. wall, roof and sky
 multipolygon_ids = []
