@@ -190,7 +190,9 @@ def images_annotations_info(main_directory, category_ids, category_colors, multi
 
     # This id will be automatically increased as we go
     annotation_id = 0
-    image_id = 0
+    # ask for user input on what object this is and get its index
+    obj = str(input("What object is this: "))
+    image_id = category_ids[obj]
     annotations = []
     images = []
 
@@ -326,3 +328,54 @@ def img_augmentation(main_folder):
         new_name = val_imgs[idx].replace('.png', '') + '_aug.png'
         cv2.imwrite(os.path.join(val_path, new_name), transformed)  
     logging.info(f'Completed augmentations for val folder!')
+
+
+
+# functions below are for the test dataset, which are in a separate folder
+
+
+# function to get "images" and "annotations" info from test dataset
+def test_json(main_directory):
+    img_path = main_directory
+
+    # This id will be automatically increased as we go
+    annotation_id = 0
+    image_id = 0
+    annotations = []
+    images = []
+
+    for image in os.listdir(img_path):
+        if image.endswith(".png"):
+            short_name = image
+            image = os.path.join(img_path, image)
+
+            # Open the image and (to be sure) we convert it to RGB
+            image_open = Image.open(image).convert("RGB")
+            w, h = image_open.size
+
+            # "images" info 
+            image_info = create_image_annotation(short_name, w, h, image_id)
+            images.append(image_info)
+
+            image_id += 1
+    return images, annotations, annotation_id
+
+
+# function to create COCO JSON for test dataset
+def test_coco(main_directory, category_ids):
+    # Get the standard COCO JSON format
+    coco_format = get_coco_json_format()
+
+    # Create category section
+    coco_format["categories"] = create_category_annotation(category_ids)
+
+    # Create images and annotations sections
+    coco_format["images"], coco_format["annotations"], annotation_cnt = test_json(main_directory)
+
+    # put json into same folder as RGB images
+    annot_path = main_directory
+
+    with open(f"{annot_path}/annotations.json", "w") as outfile:
+        json.dump(coco_format, outfile)
+
+    logging.info("Created %d annotations for images in folder" % (annotation_cnt))

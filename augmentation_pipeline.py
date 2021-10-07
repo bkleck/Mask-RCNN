@@ -12,6 +12,7 @@ logging.basicConfig(
 # create parser
 parser = argparse.ArgumentParser()
 parser.add_argument('--input_dir', default='data/')
+parser.add_argument('--test_dir', default='data/')
 args = parser.parse_args()
 
 main_folder = os.path.join(str(os.getcwd()), args.input_dir)
@@ -56,3 +57,10 @@ logging.info('Completed for training set!')
 coco_pipeline(val_dir, category_ids, category_colors, multipolygon_ids)
 logging.info('Completed for validation set!\n\n')
 
+
+# create our test dataset suitable for input into Detectron2 database
+# only for images for now
+test_folder = os.path.join(str(os.getcwd()), args.test_dir)
+test_folder = os.path.join(test_folder, 'images')
+test_coco(test_folder, category_ids)
+logging.info('Completed for test set!\n\n')
