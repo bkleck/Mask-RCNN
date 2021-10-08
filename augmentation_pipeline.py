@@ -1,5 +1,6 @@
 import argparse
 import logging
+import os
 from src.preprocessing import *
 
 # create logging configs
@@ -23,7 +24,7 @@ category_ids, category_colors = extract_json(main_folder)
 # Define the ids that are a multiplolygon. e.g. wall, roof and sky
 multipolygon_ids = []
 
-
+obj = str(input("What object is this: "))
 
 # run the function to rename all files to make them unique
 logging.info('---Start renaming all files---\n')
@@ -52,9 +53,9 @@ train_dir = os.path.join(main_folder, 'final/train')
 val_dir = os.path.join(main_folder, 'final/val')
 
 logging.info('---Start creating COCO JSON annotations---\n')
-coco_pipeline(train_dir, category_ids, category_colors, multipolygon_ids)
+coco_pipeline(train_dir, category_ids, category_colors, multipolygon_ids, obj)
 logging.info('Completed for training set!')
-coco_pipeline(val_dir, category_ids, category_colors, multipolygon_ids)
+coco_pipeline(val_dir, category_ids, category_colors, multipolygon_ids, obj)
 logging.info('Completed for validation set!\n\n')
 
 
@@ -62,5 +63,5 @@ logging.info('Completed for validation set!\n\n')
 # only for images for now
 test_folder = os.path.join(str(os.getcwd()), args.test_dir)
 test_folder = os.path.join(test_folder, 'images')
-test_coco(test_folder, category_ids)
+test_coco(test_folder, category_ids, obj)
 logging.info('Completed for test set!\n\n')

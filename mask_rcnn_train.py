@@ -75,7 +75,7 @@ configs = {'num_workers': 2,
             'lr': 0.00025,
             'epochs': 1000,
             'batch_size_per_img': 64,
-            'classes': 1
+            'classes': 2
             }
             
 logging.info('These are the model configurations:')

@@ -184,14 +184,13 @@ def train_val_split(main_folder):
 # get 'images' and 'annotations' info from the RGB & segmentation images
 # we will extract image dimensions and polygons from the segmentation images
 # and include the filename using RGB images
-def images_annotations_info(main_directory, category_ids, category_colors, multipolygon_ids):
+def images_annotations_info(main_directory, category_ids, category_colors, multipolygon_ids, obj):
     mask_path = os.path.join(main_directory, 'segmentation')
     img_path = os.path.join(main_directory, 'images')
 
     # This id will be automatically increased as we go
     annotation_id = 0
     # ask for user input on what object this is and get its index
-    obj = str(input("What object is this: "))
     image_id = category_ids[obj]
     annotations = []
     images = []
@@ -256,7 +255,7 @@ def images_annotations_info(main_directory, category_ids, category_colors, multi
 
 # this pipeline runs the function above to extract image details
 # then it converts it to COCO format and outputs a json file
-def coco_pipeline(main_directory, category_ids, category_colors, multipolygon_ids):
+def coco_pipeline(main_directory, category_ids, category_colors, multipolygon_ids, obj):
     # Get the standard COCO JSON format
     coco_format = get_coco_json_format()
 
@@ -264,7 +263,7 @@ def coco_pipeline(main_directory, category_ids, category_colors, multipolygon_id
     coco_format["categories"] = create_category_annotation(category_ids)
 
     # Create images and annotations sections
-    coco_format["images"], coco_format["annotations"], annotation_cnt = images_annotations_info(main_directory, category_ids, category_colors, multipolygon_ids)
+    coco_format["images"], coco_format["annotations"], annotation_cnt = images_annotations_info(main_directory, category_ids, category_colors, multipolygon_ids, obj)
 
     # put json into same folder as RGB images
     img_path = os.path.join(main_directory, 'images')
@@ -335,17 +334,17 @@ def img_augmentation(main_folder):
 
 
 # function to get "images" and "annotations" info from test dataset
-def test_json(main_directory):
+def test_json(main_directory, category_ids, obj):
     img_path = main_directory
 
     # This id will be automatically increased as we go
     annotation_id = 0
-    image_id = 0
+    image_id = category_ids[obj]
     annotations = []
     images = []
 
     for image in os.listdir(img_path):
-        if image.endswith(".png"):
+        if image.endswith(".jpg"):
             short_name = image
             image = os.path.join(img_path, image)
 
@@ -362,7 +361,7 @@ def test_json(main_directory):
 
 
 # function to create COCO JSON for test dataset
-def test_coco(main_directory, category_ids):
+def test_coco(main_directory, category_ids, obj):
     # Get the standard COCO JSON format
     coco_format = get_coco_json_format()
 
@@ -370,7 +369,7 @@ def test_coco(main_directory, category_ids):
     coco_format["categories"] = create_category_annotation(category_ids)
 
     # Create images and annotations sections
-    coco_format["images"], coco_format["annotations"], annotation_cnt = test_json(main_directory)
+    coco_format["images"], coco_format["annotations"], annotation_cnt = test_json(main_directory, category_ids, obj)
 
     # put json into same folder as RGB images
     annot_path = main_directory
