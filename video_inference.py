@@ -1,6 +1,7 @@
 import torch, torchvision
 import argparse
 import logging
+import time
 
 # Some basic setup:
 # Setup detectron2 logger
@@ -66,7 +67,8 @@ videos = os.listdir(test_path)
 test_metadata = MetadataCatalog.get('test')
 
 # read and write videos 1 by 1
-for vid in videos:   
+for vid in videos:  
+    start = time.time() 
     cap = cv2.VideoCapture(os.path.join(test_path,vid))
 
     # define codec and get video details
@@ -84,23 +86,38 @@ for vid in videos:
                             frameSize=(width, height),
                             isColor=True,)
 
+    print(f'Original FPS: {frames_per_second}')
+
     # show if video could be opened or not
     if (cap.isOpened() == False):
         logging.info(f'Error opening video file {vid}!')
     else:
         logging.info(f'Successfully opened video file {vid}.')
 
+    v = VideoVisualizer(metadata=test_metadata)
     while (cap.isOpened()):
         ret, frame = cap.read()
+
         if ret == True:
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            start_1 = time.time()
             outputs = predictor(frame)
-            v = VideoVisualizer(metadata=test_metadata)
+            stop_1 = time.time()
+            diff_1 = float(stop_1 - start_1)
+            print(f'Time taken for predict step: {diff_1}')
 
-            out = v.draw_instance_predictions(frame, outputs["instances"].to("cpu"))
-            vis_frame = cv2.cvtColor(out.get_image(), cv2.COLOR_RGB2BGR)
-            writer.write(vis_frame)
+            # start_2 = time.time()
+            # out = v.draw_instance_predictions(frame, outputs["instances"].to("cpu"))
+            # vis_frame = cv2.cvtColor(out.get_image(), cv2.COLOR_RGB2BGR)
+            # stop_2 = time.time()
+            # diff_2 = float(stop_2 - start_2)
+            # print(f'Time taken for draw step: {diff_2}')
+            # writer.write(vis_frame)
         else:
             break
     
-    logging.info(f'Completed inference on {vid}.')
+    later = time.time()
+    diff = int(later - start)
+    fps = num_frames / diff
+    logging.info(f'Inference FPS for {vid} is {fps} frames/second.')
+    logging.info(f'Completed inference on {vid}.\n')
