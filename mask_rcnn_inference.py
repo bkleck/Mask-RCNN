@@ -24,6 +24,8 @@ from detectron2.utils.visualizer import ColorMode
 from detectron2.evaluation import COCOEvaluator, inference_on_dataset
 from detectron2.data import build_detection_test_loader
 
+from src.preprocessing import *
+
 print(torch.cuda.is_available())
 # create logging configs
 logging.basicConfig(
@@ -42,10 +44,12 @@ main_folder = os.path.join(str(os.getcwd()), args.input_dir)
 test_folder = os.path.join(str(os.getcwd()), args.test_dir)
 test_path = os.path.join(test_folder, 'images')
 
+# make use of this function to get number of classes from JSON file
+category_ids, category_colors, count = extract_json(main_folder)
 
 # set cofigurations
 configs = {
-    'classes': 2
+    'classes': count
             }
 
 

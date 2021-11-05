@@ -19,7 +19,7 @@ args = parser.parse_args()
 main_folder = os.path.join(str(os.getcwd()), args.input_dir)
 
 # fill up the dictionaries with the JSON file generated from Unity
-category_ids, category_colors = extract_json(main_folder)
+category_ids, category_colors, count = extract_json(main_folder)
 
 # Define the ids that are a multiplolygon. e.g. wall, roof and sky
 multipolygon_ids = []
@@ -27,9 +27,9 @@ multipolygon_ids = []
 obj = str(input("What object is this: "))
 
 # run the function to rename all files to make them unique
-logging.info('---Start renaming all files---\n')
-unique_files(main_folder)
-logging.info('---Finished renaming all files---\n\n')
+# logging.info('---Start renaming all files---\n')
+# unique_files(main_folder)
+# logging.info('---Finished renaming all files---\n\n')
 
 # run the function to copy all files to a single directory
 logging.info('---Start copying all files---\n')

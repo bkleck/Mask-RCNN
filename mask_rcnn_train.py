@@ -24,6 +24,8 @@ from detectron2.utils.visualizer import ColorMode
 from detectron2.evaluation import COCOEvaluator, inference_on_dataset
 from detectron2.data import build_detection_test_loader
 
+from src.preprocessing import *
+
 print(torch.cuda.is_available())
 # create logging configs
 logging.basicConfig(
@@ -65,7 +67,8 @@ val_metadata = MetadataCatalog.get('val')
 #     cv2.imshow('Window', out.get_image()[:, :, ::-1])
 #     cv2.waitKey()
 
-
+# make use of this function to get number of classes from JSON file
+category_ids, category_colors, count = extract_json(main_folder)
 
 # Fine-tune a pretrained model
 
@@ -75,7 +78,7 @@ configs = {'num_workers': 2,
             'lr': 0.00025,
             'epochs': 1000,
             'batch_size_per_img': 64,
-            'classes': 2
+            'classes': count
             }
             
 logging.info('These are the model configurations:')

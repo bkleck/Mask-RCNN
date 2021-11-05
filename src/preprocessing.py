@@ -49,7 +49,7 @@ def extract_json(main_folder):
         # increase the id value after each object
         count += 1
         
-    return category_ids, category_colors
+    return category_ids, category_colors, count
 
 
 
