@@ -8,12 +8,14 @@
 * [Introduction](#introduction)
 * [Documentation](#documentation)
   * [Data Processing](#1-data-processing)
+  * [Image Augmentation](#2-image-augmentation)
 
 
 ## Introduction
 This project implements the **_Mask RCNN model_** using Facebook's [Detectron2](https://github.com/facebookresearch/detectron2) library. The purpose was to **_create segmentation masks_** on frames of images or videos, in order to predict the object class, as well as utilize the orientation of the mask for **_robotic pick-and-place operations_**. 
 
 To reduce the laborious process of labelling data for model training, I also connected it to a **_synthetic data pipeline_**, built with Unity and C#. This pipeline will be described in my other [repository](https://github.com/bkleck/SyntheticData). Synthetic images produced were uploaded via the front-end iOS application to an AWS S3 bucket, which was then used to trigger the Python backend on EC2 for data processing and model development.
+<br/> 
 <br/> 
 
 ## Documentation
@@ -26,11 +28,33 @@ Firstly, I will extract the **_high level information_** from the dataset of int
 
 Next, I will need to **_create training & validation datasets_** for my model. To reduce bias in my model, I will **_shuffle the RGB images randomly_** and split them into training and validation folders with the **_train-val ratio of 0.8 : 0.2_**. As the segmentation images are matched to their respective RGB images by their unique ID number, we will also split them segmentation images into training and validation folders using this ID.
 
-<p float="left">
+<p align="center">
  <img src='https://user-images.githubusercontent.com/77097236/142641690-97a2ea93-4d48-46d4-a787-9dbcc72f4894.png' width='250' height='150'>
  <img src='https://user-images.githubusercontent.com/77097236/142641857-4382bf76-2bc2-43d8-9806-1c48a9278c7e.png' width='250' height='150'>
+ <br/> 
+ <i>Example of a RGB image with its corresponding segmentation image</i>
 </p>
 
-*Example of a RGB image with its corresponding segmentation image*
+<br/> 
 
 Lastly, we will extract the **_low level information_** from each image that we have, mainly using the [OpenCV](https://github.com/opencv/opencv) library. From the RGB image, I will extract the **_file name, width, height and class ID_**, and they will be formatted into a dictionary and become one entry within the JSON file. From the segmentation image, I will make use of the [shapely](https://shapely.readthedocs.io/en/stable/manual.html) library to extract the **_polygon points_** from the image into the JSON file, and this will be used later on to construct the mask.
+<br/> 
+<br/> 
+
+### 2) Image Augmentation
+After looking at the model results, I realise that the model **_could not perform well in poor environmental conditions_**, such as low-lighting or blur caused by the camera lens, hence I decided to add in image augmentation to my synthetic dataset in order to **_increase variance and flexibility_** in different environments. After researching on various libraries, I went with [Albumentations](https://github.com/albumentations-team/albumentations) because of its **_faster speed, huge variety of augmentations and ease of use_**.
+
+ <img src='https://user-images.githubusercontent.com/77097236/142648920-f4b6e476-69c0-4eeb-b0b3-6d9af629e15e.png' width='300' height='200'>
+ 
+I created an augmentation copy of each image, hence my dataset doubled in size after this step. The transformations I utilized were HueSaturation, Contrast, Brightness, GrayScale, GaussianNoise, ISONoise, MotionBlur and GaussianBlur. I applied a probability to each of this transformations, hence there is a likelihood of more than one transformation being applied to each image, hence increasing noise to improve our model variance. Some examples are shown below:
+
+<p align="center">
+  <img src='https://user-images.githubusercontent.com/77097236/142650630-1955b9c5-73f6-4309-95c9-2d3978906ac4.png' width='200' height='125'>
+  <img src='https://user-images.githubusercontent.com/77097236/142650725-ccfcd3fa-9f98-4d59-8efb-c296c3d80b61.png' width='200' height='125'>
+  <img src='https://user-images.githubusercontent.com/77097236/142650797-80c4518b-fa89-4cf3-be44-b81aad5905ce.png' width='200' height='125'>
+  <img src='https://user-images.githubusercontent.com/77097236/142650848-2930d14a-9804-46ce-bab3-4ed2d1e7192c.png' width='200' height='125'>
+  <img src='https://user-images.githubusercontent.com/77097236/142650873-9ffef3f0-7f62-41fc-b60a-af8a077d891e.png' width='200' height='125'>
+  <img src='https://user-images.githubusercontent.com/77097236/142650913-862d46f2-94b2-4f6f-8cb1-3b53610d779d.png' width='200' height='125'>
+  <img src='https://user-images.githubusercontent.com/77097236/142651839-e14a871b-ad54-4fa0-a420-352a751ed5f6.png' width='200' height='125'>
+  <img src='https://user-images.githubusercontent.com/77097236/142652135-91e92c65-d7a7-4e0b-bc08-f5ada0b8ac3b.png' width='200' height='125'>
+
