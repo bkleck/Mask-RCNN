@@ -37,6 +37,11 @@ def extract_json(main_folder):
         # add name of object as key, and id number as value
         category_ids[object['label_name']] = count
 
+        # get the current object we are looking at so the user does not need to input
+        # this can be done using the main folder name
+        if object['label_name'] in main_folder:
+            object_of_interest = object['label_name']
+
         # get pixel values and multiply them by 255
         red = int(object['pixel_value']['r'] * 255)
         green = int(object['pixel_value']['g'] * 255)
@@ -49,10 +54,11 @@ def extract_json(main_folder):
         # increase the id value after each object
         count += 1
         
-    return category_ids, category_colors, count
+    return category_ids, category_colors, count, object_of_interest
 
 
 
+# OLD FUNCTION -- do not require with new single-scene pipeline
 
 # function to rename files to make every file unique
 # output image files from Unity are not unique
@@ -83,6 +89,8 @@ def unique_files(main_folder):
         logging.info(f'Completed renaming of files for {folder} folder!')
 
 
+
+# OLD FUNCTION -- do not require with new single-scene pipeline
 
 # function to add all files into a single directory
 # this helps with our train-validation split later on
@@ -121,16 +129,17 @@ def group_data(main_folder):
 
 # split into training and validation folders
 def train_val_split(main_folder):
-    main_path = os.path.join(main_folder, 'final')
-    img_path = os.path.join(main_path, 'images')
-    semantic_path = os.path.join(main_path, 'semantic')
+    # get the nested folder (with randomized digits)
+    inner_folder = os.listdir(main_folder)[0]
+    inner_path = os.path.join(main_folder, inner_folder)
 
-    # # create required folders (train & val)
-    train_path = os.path.join(main_path, 'train')
+    # create required folders (train & val)
+    # each train and val folder contains respective images & segmentation folders
+    train_path = os.path.join(inner_path, 'train')
     train_img_path = os.path.join(train_path, 'images')
     train_seg_path = os.path.join(train_path, 'segmentation')
 
-    val_path = os.path.join(main_path, 'val')
+    val_path = os.path.join(inner_path, 'val')
     val_img_path = os.path.join(val_path, 'images')
     val_seg_path = os.path.join(val_path, 'segmentation')
 
@@ -148,9 +157,15 @@ def train_val_split(main_folder):
         pass
 
 
-    # shuffle images in folder randomly
+    # shuffle images in RGB folder randomly
+    img_folder = str([i for i in inner_path if i.startswith('RGB')][0])
+    img_path = os.path.join(inner_path, img_folder)
     images = os.listdir(img_path)
     shuffle(images)
+
+    # get path to segmentation folder
+    semantic_folder = str([i for i in inner_path if i.startswith('Semantic')][0])
+    semantic_path = os.path.join(inner_path, semantic_folder)
 
     # split into train and val sets
     train_ratio = 0.8
@@ -163,6 +178,8 @@ def train_val_split(main_folder):
         file = os.path.join(img_path, name)
         shutil.copy(file, os.path.join(train_img_path, name))
 
+        # make use of the corresponding digits to match the appropriate RGB image
+        # to the segmentation image
         seg_name = name.replace('rgb', 'segmentation')
         seg_file = os.path.join(semantic_path, seg_name)
         shutil.copy(seg_file, os.path.join(train_seg_path, seg_name))
@@ -282,8 +299,8 @@ def coco_pipeline(main_directory, category_ids, category_colors, multipolygon_id
 # this function adds a series of augmentations to our original images
 # outputs new images with extra suffix "_aug"
 def img_augmentation(main_folder):
-    train_path = os.path.join(main_folder, 'final/train/images')
-    val_path = os.path.join(main_folder, 'final/val/images')
+    train_path = os.path.join(main_folder, 'train/images')
+    val_path = os.path.join(main_folder, 'val/images')
 
     # start with the training set
     train_imgs = os.listdir(train_path)
