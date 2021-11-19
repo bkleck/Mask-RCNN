@@ -132,6 +132,7 @@ def train_val_split(main_folder):
     # get the nested folder (with randomized digits)
     inner_folder = os.listdir(main_folder)[0]
     inner_path = os.path.join(main_folder, inner_folder)
+    folders = os.listdir(inner_path)
 
     # create required folders (train & val)
     # each train and val folder contains respective images & segmentation folders
@@ -158,13 +159,13 @@ def train_val_split(main_folder):
 
 
     # shuffle images in RGB folder randomly
-    img_folder = str([i for i in inner_path if i.startswith('RGB')][0])
+    img_folder = str([i for i in folders if i.startswith('RGB')][0])
     img_path = os.path.join(inner_path, img_folder)
     images = os.listdir(img_path)
     shuffle(images)
 
     # get path to segmentation folder
-    semantic_folder = str([i for i in inner_path if i.startswith('Semantic')][0])
+    semantic_folder = str([i for i in folders if i.startswith('Semantic')][0])
     semantic_path = os.path.join(inner_path, semantic_folder)
 
     # split into train and val sets

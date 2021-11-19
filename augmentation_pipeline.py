@@ -18,6 +18,10 @@ args = parser.parse_args()
 
 main_folder = os.path.join(str(os.getcwd()), args.input_dir)
 
+# get nested folder as well
+inner_folder = os.listdir(main_folder)[0]
+inner_path = os.path.join(main_folder, inner_folder)
+
 # fill up the dictionaries with the JSON file generated from Unity
 category_ids, category_colors, count, object_of_interest = extract_json(main_folder)
 
@@ -45,13 +49,13 @@ logging.info('---Finished train-val split---\n\n')
 
 # perform extra image augmentations with albumentation library
 logging.info('---Start generating image augmentations---\n')
-img_augmentation(main_folder)
+img_augmentation(inner_path)
 logging.info('---Finished generating image augmentations---\n\n')
 
 
 # create COCO JSON files for each train and val set
-train_dir = os.path.join(main_folder, 'train')
-val_dir = os.path.join(main_folder, 'val')
+train_dir = os.path.join(inner_path, 'train')
+val_dir = os.path.join(inner_path, 'val')
 
 logging.info('---Start creating COCO JSON annotations---\n')
 coco_pipeline(train_dir, category_ids, category_colors, multipolygon_ids, obj)
