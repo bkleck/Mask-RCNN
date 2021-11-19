@@ -26,6 +26,8 @@ from detectron2.utils.visualizer import ColorMode
 from detectron2.evaluation import COCOEvaluator, inference_on_dataset
 from detectron2.data import build_detection_test_loader
 
+from src.preprocessing import *
+
 print(torch.cuda.is_available())
 # create logging configs
 logging.basicConfig(
@@ -41,20 +43,25 @@ parser.add_argument('--test_dir', default='data/')
 args = parser.parse_args()
 
 main_folder = os.path.join(str(os.getcwd()), args.input_dir)
+inner_folder = os.listdir(main_folder)[0]
+inner_path = os.path.join(main_folder, inner_folder)
+
 test_folder = os.path.join(str(os.getcwd()), args.test_dir)
 test_path = os.path.join(test_folder, 'videos')
 
+# make use of this function to get number of classes from JSON file
+category_ids, category_colors, count, object_of_interest = extract_json(main_folder)
 
 # set cofigurations
 configs = {
-    'classes': 2
+    'classes': count
             }
 
 
 # settle the model configs
 cfg = get_cfg()
 cfg.merge_from_file(model_zoo.get_config_file("COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_1x.yaml"))
-output_dir = os.path.join(main_folder, 'output')
+output_dir = os.path.join(inner_path, 'output')
 cfg.OUTPUT_DIR = output_dir
 cfg.MODEL.WEIGHTS = os.path.join(cfg.OUTPUT_DIR, "model_final.pth")  # path to the model we just trained
 cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = 0.8   # set a custom testing threshold
@@ -67,6 +74,7 @@ videos = os.listdir(test_path)
 test_metadata = MetadataCatalog.get('test')
 
 # read and write videos 1 by 1
+# only can be run on MP4 files, not MOV files
 for vid in videos:  
     start = time.time() 
     cap = cv2.VideoCapture(os.path.join(test_path,vid))
@@ -104,15 +112,15 @@ for vid in videos:
             outputs = predictor(frame)
             stop_1 = time.time()
             diff_1 = float(stop_1 - start_1)
-            print(f'Time taken for predict step: {diff_1}')
+            # print(f'Time taken for predict step: {diff_1}')
 
-            # start_2 = time.time()
-            # out = v.draw_instance_predictions(frame, outputs["instances"].to("cpu"))
-            # vis_frame = cv2.cvtColor(out.get_image(), cv2.COLOR_RGB2BGR)
-            # stop_2 = time.time()
-            # diff_2 = float(stop_2 - start_2)
+            start_2 = time.time()
+            out = v.draw_instance_predictions(frame, outputs["instances"].to("cpu"))
+            vis_frame = cv2.cvtColor(out.get_image(), cv2.COLOR_RGB2BGR)
+            stop_2 = time.time()
+            diff_2 = float(stop_2 - start_2)
             # print(f'Time taken for draw step: {diff_2}')
-            # writer.write(vis_frame)
+            writer.write(vis_frame)
         else:
             break
     

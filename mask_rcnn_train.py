@@ -40,12 +40,15 @@ parser.add_argument('--input_dir', default='data/')
 args = parser.parse_args()
 
 main_folder = os.path.join(str(os.getcwd()), args.input_dir)
+inner_folder = os.listdir(main_folder)[0]
+inner_path = os.path.join(main_folder, inner_folder)
 
 # create training and validation paths
-train_path = os.path.join(main_folder, 'final/train/images')
-val_path = os.path.join(main_folder, 'final/val/images')
+train_path = os.path.join(inner_path, 'train/images')
+val_path = os.path.join(inner_path, 'val/images')
 
-
+print(train_path)
+print(val_path)
 
 # register new datasets to the detectron catalog
 register_coco_instances("train", {}, f'{train_path}/annotations.json', train_path)
@@ -68,7 +71,7 @@ val_metadata = MetadataCatalog.get('val')
 #     cv2.waitKey()
 
 # make use of this function to get number of classes from JSON file
-category_ids, category_colors, count = extract_json(main_folder)
+category_ids, category_colors, count, object_of_interest = extract_json(main_folder)
 
 # Fine-tune a pretrained model
 
@@ -78,7 +81,7 @@ configs = {'num_workers': 2,
             'lr': 0.00025,
             'epochs': 1000,
             'batch_size_per_img': 64,
-            'classes': count
+            'classes': count 
             }
             
 logging.info('These are the model configurations:')
@@ -98,9 +101,9 @@ cfg.SOLVER.BASE_LR = configs['lr'] # pick a good LR
 cfg.SOLVER.MAX_ITER = configs['epochs']    # 300 iterations seems good enough for this toy dataset; you will need to train longer for a practical dataset
 cfg.SOLVER.STEPS = []        # do not decay learning rate
 cfg.MODEL.ROI_HEADS.BATCH_SIZE_PER_IMAGE = configs['batch_size_per_img']   # faster, and good enough for this dataset (default: 512)
-cfg.MODEL.ROI_HEADS.NUM_CLASSES = configs['classes']  # only has one class (labo)
+cfg.MODEL.ROI_HEADS.NUM_CLASSES = count  # only has one class 
 
-output_dir = os.path.join(main_folder, 'output')
+output_dir = os.path.join(inner_path, 'output')
 cfg.OUTPUT_DIR = output_dir
 os.makedirs(cfg.OUTPUT_DIR, exist_ok=True)
 

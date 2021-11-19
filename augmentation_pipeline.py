@@ -66,7 +66,7 @@ logging.info('Completed for validation set!\n\n')
 
 # create our test dataset suitable for input into Detectron2 database
 # only for images for now
-# test_folder = os.path.join(str(os.getcwd()), args.test_dir)
-# test_folder = os.path.join(test_folder, 'images')
-# test_coco(test_folder, category_ids, obj)
-# logging.info('Completed for test set!\n\n')
+test_folder = os.path.join(str(os.getcwd()), args.test_dir)
+test_folder = os.path.join(test_folder, 'images')
+test_coco(test_folder, category_ids, obj)
+logging.info('Completed for test set!\n\n')

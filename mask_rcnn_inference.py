@@ -41,11 +41,14 @@ parser.add_argument('--test_dir', default='data/')
 args = parser.parse_args()
 
 main_folder = os.path.join(str(os.getcwd()), args.input_dir)
+inner_folder = os.listdir(main_folder)[0]
+inner_path = os.path.join(main_folder, inner_folder)
+
 test_folder = os.path.join(str(os.getcwd()), args.test_dir)
 test_path = os.path.join(test_folder, 'images')
 
 # make use of this function to get number of classes from JSON file
-category_ids, category_colors, count = extract_json(main_folder)
+category_ids, category_colors, count, object_of_interest = extract_json(main_folder)
 
 # set cofigurations
 configs = {
@@ -61,7 +64,7 @@ test_metadata = MetadataCatalog.get('test')
 # settle the model configs
 cfg = get_cfg()
 cfg.merge_from_file(model_zoo.get_config_file("COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_1x.yaml"))
-output_dir = os.path.join(main_folder, 'output')
+output_dir = os.path.join(inner_path, 'output')
 cfg.OUTPUT_DIR = output_dir
 cfg.MODEL.WEIGHTS = os.path.join(cfg.OUTPUT_DIR, "model_final.pth")  # path to the model we just trained
 cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = 0.8   # set a custom testing threshold
@@ -78,4 +81,7 @@ for d in test_dicts:
                    instance_mode=ColorMode.IMAGE_BW   # remove the colors of unsegmented pixels. This option is only available for segmentation models
     )
     out = v.draw_instance_predictions(outputs["instances"].to("cpu"))
-    out.save('result_' + d['file_name'])
+
+    path, file = os.path.split(d['file_name'])
+    new_file = 'result_' + file
+    out.save(os.path.join(path, new_file))
