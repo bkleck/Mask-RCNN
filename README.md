@@ -10,6 +10,7 @@
   * [Data Processing](#1-data-processing)
   * [Image Augmentation](#2-image-augmentation)
   * [Model Training](#3-model-training)
+  * [Model Inference](#4-model-inference)
 
 
 ## Introduction
@@ -64,6 +65,7 @@ I created an **_augmentation copy of each image_**, hence my dataset doubled in 
 <br/> 
 
 ### 3) Model Training
+- Python Scripts: *mask_rcnn_train.py*
 As we will be utilizing the MASK-RCNN model for our instance segmentation task, I will make use of **_Facebook's Detectron2 library_** for their seamless integration of models into the entire training and inference pipeline. The exact model config I utilized is [here](https://github.com/facebookresearch/detectron2/blob/main/configs/COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_1x.yaml). 
 
 Firstly, I will need to **_register my training and validation datasets_** to Detectron's catalog to fit their workflow. As I have previously converted my datasets into the **_standard COCO format_**, this can be done easily with the following code:
@@ -84,3 +86,11 @@ trainer = DefaultTrainer(cfg)
 trainer.train()
 ```
 I will keep any mask predictions with **_confidence above 80%_**, and make use of our trained model to perform validation on the val dataset. Results will be printed in the command line, with various metrics such as **_accuracy, AP, AR, IoU_**.
+
+<br/> 
+
+### 4) Model Inference
+- Python Scripts: *mask_rcnn_inference.py, video_inference.py*
+Now I will perform inference with the model I just trained. Configurations will be similar to that used in the training phase, except that we will make use of the test dataset instead, and load the model weights from the **_"model_final.pth"_** file in the output folder.
+
+For each image in the test dataset, I will read the image with OpenCV and make use of Detectron's DefaultPredictor and Visualizer to **_output predictions and draw instance masks_** on the image respectively. This will also be done for each video we have using **_OpenCV's video modules_**, with conversion between GBR and RGB as OpenCV utilises the unconventional BGR format. 
