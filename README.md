@@ -9,6 +9,7 @@
 * [Documentation](#documentation)
   * [Data Processing](#1-data-processing)
   * [Image Augmentation](#2-image-augmentation)
+  * [Model Training](#3-model-training)
 
 
 ## Introduction
@@ -26,7 +27,7 @@ The output from the [Unity Perception](https://github.com/Unity-Technologies/com
 
 Firstly, I will extract the **_high level information_** from the dataset of interest. For each class of object, I will extract the corresponding **_ID number, name, and colour_** (using pixel value). This will be used later on for identification of the object and appropriate classification by the model.
 
-Next, I will need to **_create training & validation datasets_** for my model. To reduce bias in my model, I will **_shuffle the RGB images randomly_** and split them into training and validation folders with the **_train-val ratio of 0.8 : 0.2_**. As the segmentation images are matched to their respective RGB images by their unique ID number, we will also split them segmentation images into training and validation folders using this ID.
+Next, I will need to **_create training & validation datasets_** for my model. To reduce bias in my model, I will **_shuffle the RGB images randomly_** and split them into training and validation folders with the **_train-val ratio of 0.8 : 0.2_**. As the segmentation images are matched to their respective RGB images by their unique ID number, we will also split the segmentation images into training and validation folders using this ID.
 
 <p align="center">
  <img src='https://user-images.githubusercontent.com/77097236/142641690-97a2ea93-4d48-46d4-a787-9dbcc72f4894.png' width='250' height='150'>
@@ -42,11 +43,12 @@ Lastly, we will extract the **_low level information_** from each image that we 
 <br/> 
 
 ### 2) Image Augmentation
+- Python Scripts: *augmentation_pipeline.py, preprocessing.py*
 After looking at the model results, I realise that the model **_could not perform well in poor environmental conditions_**, such as low-lighting or blur caused by the camera lens, hence I decided to add in image augmentation to my synthetic dataset in order to **_increase variance and flexibility_** in different environments. After researching on various libraries, I went with [Albumentations](https://github.com/albumentations-team/albumentations) because of its **_faster speed, huge variety of augmentations and ease of use_**.
 
  <img src='https://user-images.githubusercontent.com/77097236/142648920-f4b6e476-69c0-4eeb-b0b3-6d9af629e15e.png' width='300' height='200'>
  
-I created an augmentation copy of each image, hence my dataset doubled in size after this step. The transformations I utilized were HueSaturation, Contrast, Brightness, GrayScale, GaussianNoise, ISONoise, MotionBlur and GaussianBlur. I applied a probability to each of this transformations, hence there is a likelihood of more than one transformation being applied to each image, hence increasing noise to improve our model variance. Some examples are shown below:
+I created an **_augmentation copy of each image_**, hence my dataset doubled in size after this step. The transformations I utilized were HueSaturation, Contrast, Brightness, GrayScale, GaussianNoise, ISONoise, MotionBlur and GaussianBlur. I applied a probability to each of this transformations, hence there is a likelihood of more than one transformation being applied to each image, hence increasing noise to improve our model variance. Some examples are shown below:
 
 <p align="center">
   <img src='https://user-images.githubusercontent.com/77097236/142650630-1955b9c5-73f6-4309-95c9-2d3978906ac4.png' width='200' height='125'>
@@ -57,4 +59,28 @@ I created an augmentation copy of each image, hence my dataset doubled in size a
   <img src='https://user-images.githubusercontent.com/77097236/142650913-862d46f2-94b2-4f6f-8cb1-3b53610d779d.png' width='200' height='125'>
   <img src='https://user-images.githubusercontent.com/77097236/142651839-e14a871b-ad54-4fa0-a420-352a751ed5f6.png' width='200' height='125'>
   <img src='https://user-images.githubusercontent.com/77097236/142652135-91e92c65-d7a7-4e0b-bc08-f5ada0b8ac3b.png' width='200' height='125'>
+</p>
 
+<br/> 
+
+### 3) Model Training
+As we will be utilizing the MASK-RCNN model for our instance segmentation task, I will make use of **_Facebook's Detectron2 library_** for their seamless integration of models into the entire training and inference pipeline. The exact model config I utilized is [here](https://github.com/facebookresearch/detectron2/blob/main/configs/COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_1x.yaml). 
+
+Firstly, I will need to **_register my training and validation datasets_** to Detectron's catalog to fit their workflow. As I have previously converted my datasets into the **_standard COCO format_**, this can be done easily with the following code:
+```
+register_coco_instances("train", {}, f'{train_path}/annotations.json', train_path)
+dataset_dicts = DatasetCatalog.get('train')
+train_metadata = MetadataCatalog.get('train')
+```
+I will also extract the number of classes from our JSON file. Although the model has a multi-class head, we will only train it to **_identify 1 class_** to fit the client's workflow. To standardize the workflow and **_reduce the need for the end-user to tweak the hyper-parameters_**, I have done my own hyper-parameter tuning and settled with the following:
+- 2 images per batch
+- 0.00025 learning rate
+- 1000 epochs
+- 64 batch size per image
+
+For each object, I will be creating an output folder to store the **_checkpoints and model weights_** after training. After completing the configurations for the model, we will start the training with:
+```
+trainer = DefaultTrainer(cfg) 
+trainer.train()
+```
+I will keep any mask predictions with **_confidence above 80%_**, and make use of our trained model to perform validation on the val dataset. Results will be printed in the command line, with various metrics such as **_accuracy, AP, AR, IoU_**.
