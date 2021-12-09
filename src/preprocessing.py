@@ -8,6 +8,9 @@ import shutil
 import logging
 import albumentations as A
 import cv2
+import shapely
+from shapely.geometry import Polygon
+import itertools
 
 from src.create_annotations import *
 
@@ -41,6 +44,7 @@ def extract_json(main_folder):
         # this can be done using the main folder name
         if object['label_name'] in main_folder:
             object_of_interest = object['label_name']
+            object_id = count
 
         # get pixel values and multiply them by 255
         red = int(object['pixel_value']['r'] * 255)
@@ -54,7 +58,7 @@ def extract_json(main_folder):
         # increase the id value after each object
         count += 1
         
-    return category_ids, category_colors, count, object_of_interest
+    return category_ids, category_colors, count, object_of_interest, object_id
 
 
 
@@ -202,7 +206,7 @@ def train_val_split(main_folder):
 # get 'images' and 'annotations' info from the RGB & segmentation images
 # we will extract image dimensions and polygons from the segmentation images
 # and include the filename using RGB images
-def images_annotations_info(main_directory, category_ids, category_colors, multipolygon_ids, obj):
+def images_annotations_info(main_directory, category_ids, category_colors, multipolygon_ids, obj, type_list):
     mask_path = os.path.join(main_directory, 'segmentation')
     img_path = os.path.join(main_directory, 'images')
 
@@ -274,7 +278,8 @@ def images_annotations_info(main_directory, category_ids, category_colors, multi
 
 # this pipeline runs the function above to extract image details
 # then it converts it to COCO format and outputs a json file
-def coco_pipeline(main_directory, category_ids, category_colors, multipolygon_ids, obj):
+# the type_list is used to toggle when augmentation is used or not
+def coco_pipeline(main_directory, category_ids, category_colors, multipolygon_ids, obj, type_list):
     # Get the standard COCO JSON format
     coco_format = get_coco_json_format()
 
@@ -282,7 +287,7 @@ def coco_pipeline(main_directory, category_ids, category_colors, multipolygon_id
     coco_format["categories"] = create_category_annotation(category_ids)
 
     # Create images and annotations sections
-    coco_format["images"], coco_format["annotations"], annotation_cnt = images_annotations_info(main_directory, category_ids, category_colors, multipolygon_ids, obj)
+    coco_format["images"], coco_format["annotations"], annotation_cnt = images_annotations_info(main_directory, category_ids, category_colors, multipolygon_ids, obj, type_list)
 
     # put json into same folder as RGB images
     img_path = os.path.join(main_directory, 'images')
@@ -397,3 +402,123 @@ def test_coco(main_directory, category_ids, obj):
         json.dump(coco_format, outfile)
 
     logging.info("Created %d annotations for images in folder" % (annotation_cnt))
+
+
+
+# function to add real images manually labelled into our train and validation folders
+# as well as adding the metadata of the real images to the annotation json files
+# we would need the object ID to set the correct category for the current object
+def real_images(object_id, real_dir, inner_path):
+    real_dir = os.path.join(str(os.getcwd()), real_dir)
+
+    # get list of images and json file within the folder
+    files = os.listdir(real_dir)
+    images = [f for f in files if f.endswith('.jpg')]
+    json_file = [f for f in files if f.endswith('.json')][0]
+
+    # since all photos taken on iPhone, just need to check 1 image
+    im = cv2.imread(os.path.join(real_dir, images[0]))
+    h, w, c = im.shape
+    logging.info(f"Real images height = {h} and width = {w}.")
+
+    # read data from the json file from the online online manual annotator
+    with open(os.path.join(real_dir, json_file)) as f:
+        d = json.load(f)
+    
+    # open train and val json
+    train_path = os.path.join(inner_path, 'train/images/annotations.json')
+    val_path = os.path.join(inner_path, 'val/images/annotations.json')
+
+    with open(train_path) as f:
+        train = json.load(f)
+        
+    with open(val_path) as f:
+        val = json.load(f)
+    
+
+
+    # we start image & mask ID from 1000 to avoid overlap with synthetic data
+    image_count = 1000
+    mask_count = 1000
+
+    # store the images we filtered into both train and val datasets
+    train_imgs = []
+    val_imgs = []
+
+    logging.info("Started appending real image metadata to annotation file.")
+    for key in d.keys():
+        # this is the dictionary to append to images list
+        dict_1 = {
+                "file_name": d[key]['filename'],
+                "height": h,
+                "width": w,
+                "id": image_count 
+                }
+        
+        # this logic is used to split real image dataset equally into train n val
+        if image_count < 1015:
+            train['images'].append(dict_1)
+            train_imgs.append(d[key]['filename'])
+        else:
+            val['images'].append(dict_1)
+            val_imgs.append(d[key]['filename'])
+
+            
+        for segment in d[key]['regions']:
+            x = segment['shape_attributes']['all_points_x']
+            y = segment['shape_attributes']['all_points_y']
+            
+            # get the area of the polygon from the points
+            pgon = Polygon(zip(x, y))
+            area = pgon.area
+            
+            # combine the x and y coordinates into 1 alternating list
+            coords = [i for i in itertools.chain.from_iterable(itertools.zip_longest(x,y)) if i]
+            
+            # get bbox coordinates
+            bbox = [min(x), min(y), max(x), max(y)]
+            
+            # this is the dictionary to append to annotations list
+            dict_2 = {
+                    "segmentation": [ coords ],
+                    "area": area,
+                    "iscrowd": 0,
+                    "image_id": image_count,
+                    "bbox": bbox,
+                    "category_id": object_id,
+                    "id": mask_count
+                    }
+            
+            # this logic is used to split real image dataset equally into train n val
+            if image_count < 1015:
+                train['annotations'].append(dict_2)
+            else:
+                train['annotations'].append(dict_2)
+            
+            mask_count += 1
+            
+        image_count += 1
+
+
+    print(train)
+    # save new info back to train and mask json
+    with open(train_path, 'w') as f:
+        json.dump(train, f)
+        
+    with open(val_path, 'w') as f:
+        json.dump(val, f)
+
+    logging.info("Completed appending real image metadata to annotation file!\n")
+    logging.info("Starting copying real images into train and validation folders.")
+
+    # copy images into respective folders
+    for file in train_imgs:
+        file_path = 'data/listerine_real/' + file
+        shutil.copy(file_path, train_path)
+
+    for file in val_imgs:
+        file_path = 'data/listerine_real/' + file
+        shutil.copy(file_path, val_path) 
+
+    logging.info("Completed copying real images into train and validation folders!")
+       
