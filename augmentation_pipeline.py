@@ -48,9 +48,9 @@ logging.info('---Finished train-val split---\n\n')
 
 
 # perform extra image augmentations with albumentation library
-logging.info('---Start generating image augmentations---\n')
-img_augmentation(inner_path)
-logging.info('---Finished generating image augmentations---\n\n')
+# logging.info('---Start generating image augmentations---\n')
+# img_augmentation(inner_path)
+# logging.info('---Finished generating image augmentations---\n\n')
 
 
 # create COCO JSON files for each train and val set

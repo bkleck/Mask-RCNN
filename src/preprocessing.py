@@ -225,7 +225,8 @@ def images_annotations_info(main_directory, category_ids, category_colors, multi
             original_file_name = os.path.join(img_path, rgb_name)
 
             # we need to open both original and augmented image
-            list1 = ['normal', 'augmented']
+            # list1 = ['normal', 'augmented'] # this list only for if you use augmentation
+            list1 = ['normal']
 
             for i in list1:
                 if i == 'normal':
