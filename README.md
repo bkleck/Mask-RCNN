@@ -6,6 +6,7 @@
 
 ## Table of Contents
 * [Introduction](#introduction)
+* [How to Use](#how-to-use)
 * [Documentation](#documentation)
   * [Data Processing](#1-data-processing)
   * [Image Augmentation](#2-image-augmentation)
@@ -19,6 +20,54 @@ This project implements the **_Mask RCNN model_** using Facebook's [Detectron2](
 To reduce the laborious process of labelling data for model training, I also connected it to a **_synthetic data pipeline_**, built with Unity and C#. This pipeline will be described in my other [repository](https://github.com/bkleck/SyntheticData). Synthetic images produced were uploaded via the front-end iOS application to an AWS S3 bucket, which was then used to trigger the Python backend on EC2 for data processing and model development.
 <br/> 
 <br/> 
+
+## How to Use
+1) Environment has been setup in the **_CustomModels EC2 instance_**. If you want to set it up again, please install the dependencies with the requirements.txt. Start the EC2 instance, activate the **_pytorch_36 environment_** and go into the synthetic directory.
+```
+ssh -i "augmentusubuntu.pem" ubuntu@{EC2 instance}
+cd synthetic
+conda activate pytorch_p36
+```
+<br/> 
+
+2) Upload synthetic image files from the **_Augmentus MainApp_** to the **_augmentus-synthetic S3 bucket_** by pressing the Upload to Cloud button.
+<br/> 
+
+3) Sync the bucket to this EC2 instance.
+```
+aws s3 sync s3://augmentus-synthetic .
+```
+<br/> 
+
+4) Run the first python file to start the **_data processing, augmentation and add in real images_** to complement the synthetic data. 
+Input parameters:
+- input_dir = path to the synthetic data folder (e.g. "data/listerine#10-12-21#11 06 AM")
+- test_dir = path to real images and videos for testing of model accuracy (e.g. data/listerine_test)
+- real_dir = path to folder containing real images and annotations manually done using [VGG Image Annotator](https://www.robots.ox.ac.uk/~vgg/software/via/) (e.g. data/listerine_real), default="False"
+- augmentation = whether you want to perform augmentation on the dataset ("True"/"False"), default="False"
+```
+python augmentation_pipeline.py --input_dir="data/listerine#18-11-21#10 45 AM" --test_dir=data/listerine_test
+```
+<br/> 
+
+5) Run the second python file to start the **_training of the Mask-RCNN model_**.
+```
+python mask_rcnn_train.py --input_dir="data/listerine#18-11-21#10 45 AM"
+```
+<br/> 
+
+6) Run the last 2 python files to run **_inference on the images and videos_** in the test directory respectively.
+```
+python mask_rcnn_inference.py --input_dir="data/listerine#18-11-21#10 45 AM" --test_dir=data/listerine_test
+python video_inference.py --input_dir="data/listerine#18-11-21#10 45 AM" --test_dir=data/listerine_test
+```
+<br/> 
+
+7) To display **_training statistics_**, go into the output directory and activate tensorboard.
+```
+tensorboard --logdir=./ --port=6006 --bind_all
+```
+
 
 ## Documentation
 ### 1) Data Processing
