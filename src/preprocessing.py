@@ -426,13 +426,16 @@ def real_images(object_id, real_dir, inner_path):
         d = json.load(f)
     
     # open train and val json
-    train_path = os.path.join(inner_path, 'train/images/annotations.json')
-    val_path = os.path.join(inner_path, 'val/images/annotations.json')
+    train_path = os.path.join(inner_path, 'train/images')
+    val_path = os.path.join(inner_path, 'val/images')
 
-    with open(train_path, encoding='utf-8') as f:
+    train_annot_path = os.path.join(train_path, 'annotations.json')
+    val_annot_path = os.path.join(val_path, 'annotations.json')
+
+    with open(train_annot_path, encoding='utf-8') as f:
         train = json.load(f)
         
-    with open(val_path, encoding='utf-8') as f:
+    with open(val_annot_path, encoding='utf-8') as f:
         val = json.load(f)
     
 
@@ -499,12 +502,12 @@ def real_images(object_id, real_dir, inner_path):
             
         image_count += 1
 
-    print(train)
+
     # save new info back to train and mask json
-    with open(train_path, 'w', encoding='utf-8') as f:
+    with open(train_annot_path, 'w', encoding='utf-8') as f:
         json.dump(train, f, ensure_ascii=False)
         
-    with open(val_path, 'w', encoding='utf-8') as f:
+    with open(val_annot_path, 'w', encoding='utf-8') as f:
         json.dump(val, f, ensure_ascii=False)
 
     logging.info("Completed appending real image metadata to annotation file!\n")
@@ -520,8 +523,4 @@ def real_images(object_id, real_dir, inner_path):
         shutil.copy(file_path, val_path) 
 
     logging.info("Completed copying real images into train and validation folders!")
-
-    with open(train_path, encoding='utf-8') as f:
-        train = json.load(f)
-        print(train)
        

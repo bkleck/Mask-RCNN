@@ -50,7 +50,7 @@ test_folder = os.path.join(str(os.getcwd()), args.test_dir)
 test_path = os.path.join(test_folder, 'videos')
 
 # make use of this function to get number of classes from JSON file
-category_ids, category_colors, count, object_of_interest = extract_json(main_folder)
+category_ids, category_colors, count, object_of_interest, object_id = extract_json(main_folder)
 
 # set cofigurations
 configs = {
