@@ -77,7 +77,8 @@ logging.info('Completed for validation set!\n\n')
 
 
 # add in real images to our train and val folders, as well as annotation json if we are using them
-real_images(object_id, args.real_dir, inner_path)
+if args.real_dir != 'False':
+    real_images(object_id, args.real_dir, inner_path)
 
 # create our test dataset suitable for input into Detectron2 database
 # only for images for now
