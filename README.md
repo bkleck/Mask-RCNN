@@ -12,6 +12,7 @@
   * [Image Augmentation](#2-image-augmentation)
   * [Model Training](#3-model-training)
   * [Model Inference](#4-model-inference)
+* [Detailed Pipeline](#detailed-pipeline)
 
 
 ## Introduction
@@ -143,3 +144,54 @@ I will keep any mask predictions with **_confidence above 80%_**, and make use o
 Now I will perform inference with the model I just trained. Configurations will be similar to that used in the training phase, except that we will make use of the test dataset instead, and load the model weights from the **_"model_final.pth"_** file in the output folder.
 
 For each image in the test dataset, I will read the image with OpenCV and make use of Detectron's DefaultPredictor and Visualizer to **_output predictions and draw instance masks_** on the image respectively. This will also be done for each video we have using **_OpenCV's video modules_**, with conversion between GBR and RGB as OpenCV utilises the unconventional BGR format. 
+
+<br/> 
+
+## Detailed Pipeline
+<p align="center">
+ <img src='https://user-images.githubusercontent.com/77097236/145533449-12e14702-ecbf-4ff9-bc35-122a8dc59fe3.png'>
+</p>
+
+### 1) Synthetic Data Generation
+In this part, I will upload an object into Unity and make use of the Perception library to generate randomized scenes to create a synthetic dataset. Click the 'Upload to Cloud' button to send images to the synthetic S3 bucket. 
+
+**Input:**
+- new Semantic Segmentation Label Config for each new project, attach it to the Main Camera in Synthetic Scene
+- input object name (exactly the same as the LabelConfig) and OBJ file
+<img src='https://user-images.githubusercontent.com/77097236/145534402-05f0b627-0306-44dd-98e1-dd1eba593b54.png' width='300' height='250'>
+
+**Output:**
+- RGB images in the RGB folder and Mask images in the SemanticSegmentation folder
+- JSON files with various metrics in the Dataset folder
+
+### 2) Image Processing
+In this part, I will perform the data processing, augmentation and complement the synthetic dataset with manually annotated real images. Manual annotation was done through the [VGG Image Annotator](https://www.robots.ox.ac.uk/~vgg/software/via/), thus it will only work with the JSON files produced using this site.
+
+**Input:**
+- Synthetic data folder from S3 bucket containing output from Unity Perception
+- Test data folder with images and videos in respective sub-folders
+- Real data folder with images
+
+**Output:**
+- Train and validation folders containing RGB, augmented and real images in the images sub-folder, and mask images in the segmentation sub-folder
+- JSON files in COCO XML format will also be stored in respective images sub-folder
+
+### 3) Mask RCNN Training
+In this part, we will train our model to perform instance segmentation. 
+
+**Input:** 
+- Train and validation folders with images and COCO JSON file
+
+**Output:**
+- Model weights for each object we trained (single-class training)
+- Tensorboard logging of results
+
+### 4) Mask RCNN Inference
+In this part, we will evaluate our model performance by running inference on real image and video samples.
+
+**Input:**
+- Model weight
+- Test dataset
+
+**Output:**
+- Image and video results with mask output on frames
