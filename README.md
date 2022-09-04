@@ -25,18 +25,18 @@ To reduce the laborious process of labelling data for model training, I also con
 ## How to Use
 1) Environment has been setup in the **_CustomModels EC2 instance_**. If you want to set it up again, please install the dependencies with the requirements.txt. Start the EC2 instance, activate the **_pytorch_36 environment_** and go into the synthetic directory.
 ```
-ssh -i "augmentusubuntu.pem" ubuntu@{EC2 instance}
+ssh -i "bkleckubuntu.pem" ubuntu@{EC2 instance}
 cd synthetic
 conda activate pytorch_p36
 ```
 <br/> 
 
-2) Upload synthetic image files from the **_Augmentus MainApp_** to the **_augmentus-synthetic S3 bucket_** by pressing the Upload to Cloud button.
+2) Upload synthetic image files from the **_MainApp_** to the **_bkleck-synthetic S3 bucket_** by pressing the Upload to Cloud button.
 <br/> 
 
 3) Sync the bucket to this EC2 instance.
 ```
-aws s3 sync s3://augmentus-synthetic .
+aws s3 sync s3://bkleck-synthetic .
 ```
 <br/> 
 
